@@ -46,12 +46,14 @@ unless File.exists?(icon_file)
   require 'rubygems'
   require 'pismo'
   icon_url = Pismo::Document.new( url ).favicon
-  icon_name = "/tmp/chrome-app-icon/#{File.basename( icon_url )}"
-  FileUtils.mkdir_p "/tmp/chrome-app-icon"
-  system "wget -O #{se icon_name} #{se icon_url}"
-  abort "Can't fetch #{icon_url}" unless $? == 0
-  system "convert #{se icon_name} -resize 256x256 -composite -depth 8 #{se icon_file}"
-  abort "Can't convert #{icon_name}" unless $? == 0
+  if icon_url
+    icon_name = "/tmp/chrome-app-icon/#{File.basename( icon_url )}"
+    FileUtils.mkdir_p "/tmp/chrome-app-icon"
+    system "wget -O #{se icon_name} #{se icon_url}"
+    abort "Can't fetch #{icon_url}" unless $? == 0
+    system "convert #{se icon_name} -resize 256x256 -depth 8 #{se icon_file}"
+    abort "Can't convert #{icon_name}" unless $? == 0
+  end
 end
 
 system "xdotool search --classname #{se window_class} windowactivate"
