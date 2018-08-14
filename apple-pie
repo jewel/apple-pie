@@ -10,6 +10,11 @@ if ARGV.size == 3
   friendly = ARGV.shift
   profile = ARGV.shift
   url = ARGV.shift
+elsif ARGV.size == 4
+  friendly = ARGV.shift
+  profile = ARGV.shift
+  url = ARGV.shift
+  icon_url = ARGV.shift
 elsif 
   friendly = ARGV.shift
   profile = friendly.downcase
@@ -18,39 +23,55 @@ else
   abort "Usage: apple-pie [friendly name] [url] [profile]"
 end
 
+def update path, contents
+  return if File.exist?(path) && File.binread(path) == contents
+  File.binwrite path, contents
+  File.chmod 0755, path
+end
+
 name = url.gsub /[^\w\.]/, '_'
 
 window_class = name.sub /^https?___/, ''
 
+script_file = "#{ENV['HOME']}/.cache/apple-pie/#{se profile}-#{se name}.sh"
+
+update script_file, <<HERE
+#!/bin/sh
+exec /usr/bin/chromium-browser --user-data-dir=#{ENV['HOME']}/.cache/apple-pie/#{se profile} -app=#{se url}
+HERE
+
 desktop_file = "#{ENV['HOME']}/.local/share/applications/chrome-#{name}.desktop"
 
-contents = <<HERE
+update desktop_file, <<HERE
 #!/usr/bin/env xdg-open
 [Desktop Entry]
 Version=1.0
 Terminal=false
 Type=Application
 Name=#{friendly}
-Exec=/usr/bin/chromium-browser --user-data-dir=#{ENV['HOME']}/.cache/apple-pie/#{se profile} --app=#{se url}
+Exec=#{script_file}
 Icon=chrome-#{name}
 StartupWMClass=#{window_class}
 HERE
 
-if !File.exists?(desktop_file) || File.read(desktop_file) != contents
-  File.binwrite desktop_file, contents
-  File.chmod 0755, desktop_file
-end
 
 icon_file = "#{ENV['HOME']}/.local/share/icons/hicolor/256x256/apps/chrome-#{name}.png"
 unless File.exists?(icon_file)
-  require 'rubygems'
-  require 'pismo'
-  icon_url = Pismo::Document.new( url ).favicon
+  require 'fileutils'
+  if !icon_url
+    require 'rubygems'
+    require 'pismo'
+    icon_url = Pismo::Document.new( url ).favicon
+  end
+  icon_url ||= "#{url}/favicon.ico"
   if icon_url
     icon_name = "/tmp/chrome-app-icon/#{File.basename( icon_url )}"
+
     FileUtils.mkdir_p "/tmp/chrome-app-icon"
     system "wget -O #{se icon_name} #{se icon_url}"
     abort "Can't fetch #{icon_url}" unless $? == 0
+
+    FileUtils.mkdir_p File.dirname(icon_file)
     system "convert #{se icon_name} -resize 256x256 -depth 8 #{se icon_file}"
     abort "Can't convert #{icon_name}" unless $? == 0
   end
