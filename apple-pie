@@ -37,7 +37,7 @@ script_file = "#{ENV['HOME']}/.cache/apple-pie/#{se profile}-#{se name}.sh"
 
 update script_file, <<HERE
 #!/bin/sh
-exec /usr/bin/chromium-browser --user-data-dir=#{ENV['HOME']}/.cache/apple-pie/#{se profile} -app=#{se url}
+exec /usr/bin/chromium-browser --user-data-dir=#{ENV['HOME']}/.cache/apple-pie/#{se profile} -app=#{se url} --class=#{se window_class}
 HERE
 
 desktop_file = "#{ENV['HOME']}/.local/share/applications/chrome-#{name}.desktop"
@@ -50,6 +50,7 @@ Terminal=false
 Type=Application
 Name=#{friendly}
 Exec=#{script_file}
+>>>>>>> Fix icons
 Icon=chrome-#{name}
 StartupWMClass=#{window_class}
 HERE
