@@ -32,12 +32,16 @@ end
 name = url.gsub /[^\w\.]/, '_'
 
 window_class = name.sub /^https?___/, ''
+window_class.sub! /_/, '__'
 
 script_file = "#{ENV['HOME']}/.cache/apple-pie/#{se profile}-#{se name}.sh"
 
+app_flag = '-app='
+app_flag = '' if ENV['TABS'].to_i == 1
+
 update script_file, <<HERE
 #!/bin/sh
-exec /usr/bin/chromium-browser --user-data-dir=#{ENV['HOME']}/.cache/apple-pie/#{se profile} -app=#{se url} --class=#{se window_class}
+exec chromium --user-data-dir=#{ENV['HOME']}/snap/chromium/common/apple-pie/#{se profile} --class=#{se window_class} #{app_flag}#{se url}
 HERE
 
 desktop_file = "#{ENV['HOME']}/.local/share/applications/chrome-#{name}.desktop"
@@ -50,7 +54,6 @@ Terminal=false
 Type=Application
 Name=#{friendly}
 Exec=#{script_file}
->>>>>>> Fix icons
 Icon=chrome-#{name}
 StartupWMClass=#{window_class}
 HERE
@@ -62,7 +65,7 @@ unless File.exists?(icon_file)
   if !icon_url
     require 'rubygems'
     require 'pismo'
-    icon_url = Pismo::Document.new( url ).favicon
+    icon_url = Pismo::Document.new( url.to_s ).favicon
   end
   icon_url ||= "#{url}/favicon.ico"
   if icon_url
@@ -73,10 +76,15 @@ unless File.exists?(icon_file)
     abort "Can't fetch #{icon_url}" unless $? == 0
 
     FileUtils.mkdir_p File.dirname(icon_file)
-    system "convert #{se icon_name} -resize 256x256 -depth 8 #{se icon_file}"
+    system "convert #{se icon_name}[--1] -resize 256x256 -depth 8 #{se icon_file}"
     abort "Can't convert #{icon_name}" unless $? == 0
   end
 end
+
+puts "Desktop: #{desktop_file}"
+puts "Icon: #{icon_file}"
+puts "Script: #{script_file}"
+puts "Window Class: #{window_class}"
 
 system "xdotool search --classname #{se window_class} windowactivate"
 
